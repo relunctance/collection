@@ -1,15 +1,14 @@
 # collection
 go 集合工具包  同PHP  array_collumn()
 
-
-## example:
-
-
-### install 
+## install 
 
 ```
 go get -v github.com/relunctance/collection
 ```
+
+
+## example Slice:
 
 
 ``` go
@@ -29,8 +28,7 @@ func main() {
 }
 
 ```
-
-
+## example map:
 
 ```go
 func main() {
