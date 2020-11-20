@@ -1,7 +1,9 @@
 package collection
 
 import (
+	"fmt"
 	"reflect"
+	"strconv"
 	"sync"
 )
 
@@ -83,9 +85,23 @@ func (s *Collection) StringMapSlice() (ret map[string][]interface{}) {
 	mapdata := s.dataTrunMulti()
 	ret = make(map[string][]interface{}, len(mapdata))
 	for k, items := range mapdata {
-		ret[k.(string)] = items
+		ret[interface2String(k)] = items
 	}
 	return
+}
+
+func interface2String(v interface{}) string {
+	var key string
+	switch val := v.(type) {
+
+	case int:
+		key = strconv.Itoa(val)
+	case string:
+		key = val
+	default:
+		key = fmt.Sprintf("%v", val)
+	}
+	return key
 }
 
 // data_trun_key();
