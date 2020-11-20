@@ -65,7 +65,7 @@ func (s *Collection) StringSlice() (ret []string) {
 	slice := s.buildSlice()
 	ret = make([]string, 0, len(slice))
 	for _, v := range slice {
-		ret = append(ret, v.(string))
+		ret = append(ret, interface2String(v))
 	}
 	return
 }
