@@ -19,7 +19,7 @@ func TestStringMap(t *testing.T) {
 	}
 	ret := New().Value(data).Field("Name").StringMap()
 	/*
-		expect:  map[string][]interface{} {
+		expect:  map[string]interface{} {
 			"hello1": interface{User{1, 32, "hello1"}},
 			"hello2": interface{User{3, 32, "hello2"}  },	// 其中User{2, 32, "hello2"}会被覆盖掉
 			"hello3": interface{User{4, 32, "hello3"}},
