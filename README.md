@@ -39,3 +39,38 @@ func main() {
     ret := collection.New().Value(data).Field("Id").IntSlice() // []int{1,2}
 }
 ```
+## example3:
+
+```go
+	data := []User{
+		User{1, 32, "hello1"},
+		User{2, 32, "hello2"},
+		User{3, 32, "hello2"},
+		User{4, 32, "hello3"},
+	}
+	ret := New().Value(data).Field("Name").StringMap()
+	/*
+		return:  map[string][]interface{} {
+			"hello1": interface{User{1, 32, "hello1"}},
+			"hello2": interface{User{3, 32, "hello2"}},	// 其中User{2, 32, "hello2"}会被覆盖掉
+			"hello3": interface{User{4, 32, "hello3"}},
+		}
+	*/
+```
+## example4:
+```go
+	data := []User{
+		User{1, 32, "hello1"},
+		User{2, 32, "hello2"},
+		User{3, 32, "hello2"},
+		User{4, 32, "hello3"},
+	}
+	ret := New().Value(data).Field("Name").StringMapSlice()
+	/*
+		return:  map[string][]interface{} {
+			"hello1": []interface{User{1, 32, "hello1"}},
+			"hello2": []interface{User{2, 32, "hello2"} , User{3, 32, "hello2"}  },
+			"hello3": []interface{User{4, 32, "hello3"}},
+		}
+	*/
+```
