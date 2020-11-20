@@ -56,16 +56,27 @@ func (s *Collection) getValue(v reflect.Value) interface{} {
 func (s *Collection) IntSlice() (ret []int) {
 	slice := s.buildSlice()
 	ret = make([]int, 0, len(slice))
+	tmp := make(map[int]struct{}, len(slice))
 	for _, v := range slice {
-		ret = append(ret, v.(int))
+		vint := v.(int)
+		if _, ok := tmp[vint]; !ok { // 自动去重
+			ret = append(ret, vint)
+			tmp[vint] = struct{}{}
+		}
 	}
 	return
 }
+
 func (s *Collection) StringSlice() (ret []string) {
 	slice := s.buildSlice()
 	ret = make([]string, 0, len(slice))
+	tmp := make(map[string]struct{}, len(slice))
 	for _, v := range slice {
-		ret = append(ret, interface2String(v))
+		vstr := interface2String(v)
+		if _, ok := tmp[vstr]; !ok { // 自动去重
+			ret = append(ret, vstr)
+			tmp[vstr] = struct{}{}
+		}
 	}
 	return
 }
