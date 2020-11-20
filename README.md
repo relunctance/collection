@@ -50,7 +50,7 @@ func main() {
 	}
 	ret := New().Value(data).Field("Name").StringMap()
 	/*
-		return:  map[string][]interface{} {
+		return:  map[string]interface{} {
 			"hello1": interface{User{1, 32, "hello1"}},
 			"hello2": interface{User{3, 32, "hello2"}},	// 其中User{2, 32, "hello2"}会被覆盖掉
 			"hello3": interface{User{4, 32, "hello3"}},
