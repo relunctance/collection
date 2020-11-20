@@ -1,6 +1,7 @@
 package collection
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -8,6 +9,21 @@ type User struct {
 	Id   int    `json:"id"`
 	Age  int    `json:"age"`
 	Name string `json:"name"`
+}
+
+func TestMapValue(t *testing.T) {
+
+	data := map[string]User{
+		"hello1": User{1, 32, "hello1"},
+		"hello2": User{2, 32, "hello2"},
+	}
+	ret := New().Value(data).Field("Id").IntSlice() // []int{1,2}
+	if len(ret) != 2 {
+		t.Fatalf("should be == 1")
+	}
+	if ret[0] != 1 || ret[1] != 2 {
+		t.Fatalf("should be == []int{1,2}")
+	}
 }
 
 func TestInputNotSlice(t *testing.T) {

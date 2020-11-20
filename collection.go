@@ -1,7 +1,6 @@
 package collection
 
 import (
-	"fmt"
 	"reflect"
 )
 
@@ -24,8 +23,9 @@ func New() *Collection {
 }
 
 func (s *Collection) Value(data interface{}) *Collection {
-	if !IsSlice(data) {
-		panic(fmt.Errorf("input value is not slice"))
+	vk := reflect.ValueOf(data).Kind()
+	if vk != reflect.Slice && vk != reflect.Map {
+		panic("must Slice or Map")
 	}
 	s.data = data
 	return s
@@ -75,9 +75,19 @@ func (s *Collection) buildSlice() (ret []interface{}) {
 	case reflect.Slice:
 		for i := 0; i < l; i++ {
 			item := v.Index(i)
-			v := s.getValue(item)
-			if v != nil {
-				ret = append(ret, v) //
+			val := s.getValue(item)
+			if val != nil {
+				ret = append(ret, val)
+			}
+		}
+
+	case reflect.Map:
+		mapkeys := v.MapKeys()
+		for _, idx := range mapkeys {
+			item := v.MapIndex(idx)
+			val := s.getValue(item)
+			if val != nil {
+				ret = append(ret, val)
 			}
 		}
 	}
