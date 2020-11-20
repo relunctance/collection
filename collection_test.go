@@ -1,7 +1,6 @@
 package collection
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -11,6 +10,56 @@ type User struct {
 	Name string `json:"name"`
 }
 
+func TestStringMap(t *testing.T) {
+	data := []User{
+		User{1, 32, "hello1"},
+		User{2, 32, "hello2"},
+		User{3, 32, "hello2"},
+		User{4, 32, "hello3"},
+	}
+	ret := New().Value(data).Field("Name").StringMap()
+	/*
+		expect:  map[string][]interface{} {
+			"hello1": interface{User{1, 32, "hello1"}},
+			"hello2": interface{User{3, 32, "hello2"}  },	// 其中User{2, 32, "hello2"}会被覆盖掉
+			"hello3": interface{User{4, 32, "hello3"}},
+		}
+	*/
+	if len(ret) != 3 {
+		t.Fatalf("should be == 3")
+	}
+	if ret["hello2"].(User).Id != 3 {
+		t.Fatalf("id should be == 3")
+	}
+
+}
+func TestStringMapSlice(t *testing.T) {
+	data := []User{
+		User{1, 32, "hello1"},
+		User{2, 32, "hello2"},
+		User{3, 32, "hello2"},
+		User{4, 32, "hello3"},
+	}
+	ret := New().Value(data).Field("Name").StringMapSlice()
+	/*
+		expect:  map[string][]interface{} {
+			"hello1": []interface{User{1, 32, "hello1"}},
+			"hello2": []interface{User{2, 32, "hello2"} , User{3, 32, "hello2"}  },
+			"hello3": []interface{User{4, 32, "hello3"}},
+		}
+	*/
+	if len(ret) != 3 {
+		t.Fatalf("should be == 3")
+	}
+
+	if ret["hello2"][0].(User).Id != 2 {
+		t.Fatalf("id should be == 2")
+	}
+	if ret["hello2"][1].(User).Id != 3 {
+		t.Fatalf("id should be == 2")
+	}
+
+}
 func TestMapValue(t *testing.T) {
 
 	data := map[string]User{

@@ -2,6 +2,7 @@ package collection
 
 import (
 	"reflect"
+	"sync"
 )
 
 type Collection struct {
@@ -65,9 +66,168 @@ func (s *Collection) StringSlice() (ret []string) {
 		ret = append(ret, v.(string))
 	}
 	return
-
 }
 
+// data_trun_key();
+func (s *Collection) IntMapSlice() (ret map[int][]interface{}) {
+	mapdata := s.dataTrunMulti()
+	ret = make(map[int][]interface{}, len(mapdata))
+	for k, items := range mapdata {
+		ret[k.(int)] = items
+	}
+	return
+}
+
+// data_trun_key();
+func (s *Collection) StringMapSlice() (ret map[string][]interface{}) {
+	mapdata := s.dataTrunMulti()
+	ret = make(map[string][]interface{}, len(mapdata))
+	for k, items := range mapdata {
+		ret[k.(string)] = items
+	}
+	return
+}
+
+// data_trun_key();
+func (s *Collection) IntMap() (ret map[int]interface{}) {
+	mapdata := s.dataTrunValue()
+	ret = make(map[int]interface{}, len(mapdata))
+	for k, items := range mapdata {
+		ret[k.(int)] = items
+	}
+	return
+}
+
+// data_trun_key();
+func (s *Collection) StringMap() (ret map[string]interface{}) {
+	mapdata := s.dataTrunValue()
+	ret = make(map[string]interface{}, len(mapdata))
+	for k, items := range mapdata {
+		ret[k.(string)] = items
+	}
+	return
+}
+
+// 仅用于定义类型
+// valKey 为Field("field") 取到的对应item的value值
+// itemInterfaceValue 为对应item
+type F func(valKey interface{}, itemInterfaceValue interface{})
+
+func (s *Collection) commonDataTrun(f F) {
+	v := reflect.ValueOf(s.data)
+	vk := v.Kind()
+	l := v.Len()
+	if l == 0 {
+		return
+	}
+
+	switch vk {
+	case reflect.Slice:
+		for i := 0; i < l; i++ {
+			item := v.Index(i)
+			if item.CanInterface() {
+				valKey := s.getValue(item)
+				f(valKey, item.Interface()) // 利用map是指针传递这个特性
+			}
+		}
+
+	case reflect.Map:
+		mapkeys := v.MapKeys()
+		for _, idx := range mapkeys {
+			item := v.MapIndex(idx)
+			if item.CanInterface() {
+				valKey := s.getValue(item)
+				f(valKey, item.Interface())
+			}
+		}
+	}
+	return
+
+}
+func (s *Collection) dataTrunValue() (res map[interface{}]interface{}) {
+	lock := new(sync.Mutex)
+	res = make(map[interface{}]interface{}, 10)
+	var f F = func(valKey interface{}, itemInterfaceValue interface{}) {
+		if valKey == nil {
+			return
+		}
+		lock.Lock()
+		res[valKey] = itemInterfaceValue
+		lock.Unlock()
+	}
+	s.commonDataTrun(f)
+	return
+}
+
+func (s *Collection) dataTrunMulti() (res map[interface{}][]interface{}) {
+	lock := new(sync.Mutex)
+	res = make(map[interface{}][]interface{}, 10)
+	var f F = func(valKey interface{}, itemInterfaceValue interface{}) {
+		if valKey == nil {
+			return
+		}
+		lock.Lock()
+		_, ok := res[valKey]
+		if !ok {
+			res[valKey] = make([]interface{}, 0, 10) //减少分配内存
+		}
+		res[valKey] = append(res[valKey], itemInterfaceValue)
+		lock.Unlock()
+	}
+
+	s.commonDataTrun(f)
+	return
+}
+
+/*
+func (s *Collection) dataTrunMulti() (res map[interface{}][]interface{}) {
+	lock := new(sync.Mutex)
+	v := reflect.ValueOf(s.data)
+	vk := v.Kind()
+	l := v.Len()
+	if l == 0 {
+		return
+	}
+	res = make(map[interface{}][]interface{}, 10)
+	var f = func(valKey interface{}, itemInterfaceValue interface{}) {
+		if valKey == nil {
+			return
+		}
+		lock.Lock()
+		_, ok := res[valKey]
+		if !ok {
+			res[valKey] = make([]interface{}, 0, 10) //减少分配内存
+		}
+		res[valKey] = append(res[valKey], itemInterfaceValue)
+		lock.Unlock()
+	}
+
+	switch vk {
+	case reflect.Slice:
+		for i := 0; i < l; i++ {
+			item := v.Index(i)
+			if item.CanInterface() {
+				valKey := s.getValue(item)
+				f(valKey, item.Interface())
+			}
+		}
+
+	case reflect.Map:
+		mapkeys := v.MapKeys()
+		for _, idx := range mapkeys {
+			item := v.MapIndex(idx)
+			if item.CanInterface() {
+				valKey := s.getValue(item)
+				f(valKey, item.Interface())
+			}
+		}
+	}
+	return
+
+}
+*/
+
+//commonBuild
 func (s *Collection) buildSlice() (ret []interface{}) {
 	v := reflect.ValueOf(s.data)
 	vk := v.Kind()
