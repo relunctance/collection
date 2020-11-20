@@ -1,5 +1,5 @@
 # collection
-go 集合工具包  同PHP  array_collumn()
+go 集合工具包  同PHP  [array_collumn()](https://www.php.net/manual/zh/function.array-column.php)
 
 ## install 
 
