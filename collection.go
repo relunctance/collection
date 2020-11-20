@@ -40,6 +40,11 @@ func (s *Collection) Data() interface{} {
 	return s.data
 }
 
+// 返回根据Field取到的元素数组
+func (s *Collection) Slice() []interface{} {
+	return s.buildSlice()
+}
+
 func (s *Collection) getValue(v reflect.Value) interface{} {
 	return getValueByKey(v, s.field)
 }
