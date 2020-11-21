@@ -11,6 +11,29 @@ type User struct {
 	Name string `json:"name"`
 }
 
+func TestIntSliceError(t *testing.T) {
+
+	type UserTmp struct {
+		Id   int      `json:"id"`
+		Age  int      `json:"age"`
+		Name []string `json:"name"`
+	}
+
+	data := []UserTmp{
+		UserTmp{1, 32, []string{"hello1"}},
+		UserTmp{2, 32, []string{"hello2"}},
+		UserTmp{3, 32, []string{"hello2"}},
+		UserTmp{4, 32, []string{"hello3"}},
+	}
+
+	ret := New().Value(data).Field("Name").StringSlice() // []string{"[hello1]", "[hello2]", "[hello2]", "[hello3]"}
+
+	if len(ret) != 4 {
+		t.Fatalf("should be == 4")
+	}
+
+}
+
 func TestIntUniqueSlice(t *testing.T) {
 	data := []User{
 		User{1, 32, "hello1"},
@@ -18,9 +41,14 @@ func TestIntUniqueSlice(t *testing.T) {
 		User{3, 32, "hello2"},
 		User{4, 32, "hello3"},
 	}
-	ret := New().Value(data).Field("Name").StringSlice()         // [hello1 hello2 hello2 hello3]
-	ret = New().Value(data).Field("Name").Unique().StringSlice() // [hello1 hello2 hello2 hello3]
-	fmt.Println(ret)
+	ret := New().Value(data).Field("Name").StringSlice() // [hello1 hello2 hello2 hello3]
+	if len(ret) != 4 {
+		t.Fatalf("should be == 4")
+	}
+	ret = New().Value(data).Field("Name").Unique().StringSlice() // [hello1 hello2 hello3]
+	if len(ret) != 3 {
+		t.Fatalf("should be == 3")
+	}
 }
 
 func TestStringMap(t *testing.T) {
