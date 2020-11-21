@@ -74,3 +74,16 @@ func main() {
 		}
 	*/
 ```
+
+## example unique:
+
+```go
+	data := []User{
+		User{1, 32, "hello1"},
+		User{2, 32, "hello2"},
+		User{3, 32, "hello2"},
+		User{4, 32, "hello3"},
+	}
+	ret := New().Value(data).Field("Name").StringSlice()         // [hello1 hello2 hello2 hello3]
+	ret = New().Value(data).Field("Name").Unique().StringSlice() // [hello1 hello2 hello3]
+```

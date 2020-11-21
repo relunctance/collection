@@ -1,6 +1,7 @@
 package collection
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -8,6 +9,18 @@ type User struct {
 	Id   int    `json:"id"`
 	Age  int    `json:"age"`
 	Name string `json:"name"`
+}
+
+func TestIntUniqueSlice(t *testing.T) {
+	data := []User{
+		User{1, 32, "hello1"},
+		User{2, 32, "hello2"},
+		User{3, 32, "hello2"},
+		User{4, 32, "hello3"},
+	}
+	ret := New().Value(data).Field("Name").StringSlice()         // [hello1 hello2 hello2 hello3]
+	ret = New().Value(data).Field("Name").Unique().StringSlice() // [hello1 hello2 hello2 hello3]
+	fmt.Println(ret)
 }
 
 func TestStringMap(t *testing.T) {

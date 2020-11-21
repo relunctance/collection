@@ -8,6 +8,8 @@ import (
 	"sync"
 )
 
+var collection *Collection
+
 type Collection struct {
 	data       interface{}
 	field      string
@@ -24,7 +26,18 @@ func NewWithValue(data interface{}) *Collection {
 // New().Value([]*User)
 // New().Value([]User)
 func New() *Collection {
-	return &Collection{} // 默认unique = false
+	if collection == nil { // 单例模式
+		return &Collection{} // 默认unique = false
+	}
+	collection.Init()
+	return collection
+}
+
+func (s *Collection) Init() {
+	s.data = nil
+	s.field = ""
+	s.uniqueFlag = false
+	return
 }
 
 func (s *Collection) Value(data interface{}) *Collection {
