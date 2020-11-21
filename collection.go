@@ -3,13 +3,15 @@ package collection
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strconv"
 	"sync"
 )
 
 type Collection struct {
-	data  interface{}
-	field string
+	data       interface{}
+	field      string
+	uniqueFlag bool
 }
 
 func NewWithValue(data interface{}) *Collection {
@@ -22,7 +24,7 @@ func NewWithValue(data interface{}) *Collection {
 // New().Value([]*User)
 // New().Value([]User)
 func New() *Collection {
-	return &Collection{}
+	return &Collection{} // 默认unique = false
 }
 
 func (s *Collection) Value(data interface{}) *Collection {
@@ -30,12 +32,19 @@ func (s *Collection) Value(data interface{}) *Collection {
 	if vk != reflect.Slice && vk != reflect.Map {
 		panic("must Slice or Map")
 	}
+	s.uniqueFlag = false // 每次重新设置值时, 默认不进行去重
 	s.data = data
 	return s
 }
 
 func (s *Collection) Field(field string) *Collection {
 	s.field = field
+	return s
+}
+
+// 去重
+func (s *Collection) Unique() *Collection {
+	s.uniqueFlag = true
 	return s
 }
 
@@ -56,13 +65,13 @@ func (s *Collection) getValue(v reflect.Value) interface{} {
 func (s *Collection) IntSlice() (ret []int) {
 	slice := s.buildSlice()
 	ret = make([]int, 0, len(slice))
-	tmp := make(map[int]struct{}, len(slice))
 	for _, v := range slice {
-		vint := v.(int)
-		if _, ok := tmp[vint]; !ok { // 自动去重
+		if vint, err := interface2Int(v); err == nil {
 			ret = append(ret, vint)
-			tmp[vint] = struct{}{}
 		}
+	}
+	if s.uniqueFlag {
+		ret = SliceIntUnique(ret)
 	}
 	return
 }
@@ -70,13 +79,12 @@ func (s *Collection) IntSlice() (ret []int) {
 func (s *Collection) StringSlice() (ret []string) {
 	slice := s.buildSlice()
 	ret = make([]string, 0, len(slice))
-	tmp := make(map[string]struct{}, len(slice))
 	for _, v := range slice {
 		vstr := interface2String(v)
-		if _, ok := tmp[vstr]; !ok { // 自动去重
-			ret = append(ret, vstr)
-			tmp[vstr] = struct{}{}
-		}
+		ret = append(ret, vstr)
+	}
+	if s.uniqueFlag {
+		ret = SliceStringUnique(ret)
 	}
 	return
 }
@@ -86,9 +94,20 @@ func (s *Collection) IntMapSlice() (ret map[int][]interface{}) {
 	mapdata := s.dataTrunMulti()
 	ret = make(map[int][]interface{}, len(mapdata))
 	for k, items := range mapdata {
-		ret[k.(int)] = items
+		if vint, err := interface2Int(k); err == nil {
+			ret[vint] = items
+		}
 	}
 	return
+}
+func interface2Int(v interface{}) (int, error) {
+	switch val := v.(type) {
+	case int:
+		return val, nil
+	case string:
+		return strconv.Atoi(val)
+	}
+	return 0, fmt.Errorf("can not ParseInt success")
 }
 
 // data_trun_key();
@@ -104,7 +123,6 @@ func (s *Collection) StringMapSlice() (ret map[string][]interface{}) {
 func interface2String(v interface{}) string {
 	var key string
 	switch val := v.(type) {
-
 	case int:
 		key = strconv.Itoa(val)
 	case string:
@@ -120,7 +138,9 @@ func (s *Collection) IntMap() (ret map[int]interface{}) {
 	mapdata := s.dataTrunValue()
 	ret = make(map[int]interface{}, len(mapdata))
 	for k, items := range mapdata {
-		ret[k.(int)] = items
+		if vint, err := interface2Int(k); err == nil {
+			ret[vint] = items
+		}
 	}
 	return
 }
@@ -130,7 +150,7 @@ func (s *Collection) StringMap() (ret map[string]interface{}) {
 	mapdata := s.dataTrunValue()
 	ret = make(map[string]interface{}, len(mapdata))
 	for k, items := range mapdata {
-		ret[k.(string)] = items
+		ret[interface2String(k)] = items
 	}
 	return
 }
@@ -206,54 +226,6 @@ func (s *Collection) dataTrunMulti() (res map[interface{}][]interface{}) {
 	return
 }
 
-/*
-func (s *Collection) dataTrunMulti() (res map[interface{}][]interface{}) {
-	lock := new(sync.Mutex)
-	v := reflect.ValueOf(s.data)
-	vk := v.Kind()
-	l := v.Len()
-	if l == 0 {
-		return
-	}
-	res = make(map[interface{}][]interface{}, 10)
-	var f = func(valKey interface{}, itemInterfaceValue interface{}) {
-		if valKey == nil {
-			return
-		}
-		lock.Lock()
-		_, ok := res[valKey]
-		if !ok {
-			res[valKey] = make([]interface{}, 0, 10) //减少分配内存
-		}
-		res[valKey] = append(res[valKey], itemInterfaceValue)
-		lock.Unlock()
-	}
-
-	switch vk {
-	case reflect.Slice:
-		for i := 0; i < l; i++ {
-			item := v.Index(i)
-			if item.CanInterface() {
-				valKey := s.getValue(item)
-				f(valKey, item.Interface())
-			}
-		}
-
-	case reflect.Map:
-		mapkeys := v.MapKeys()
-		for _, idx := range mapkeys {
-			item := v.MapIndex(idx)
-			if item.CanInterface() {
-				valKey := s.getValue(item)
-				f(valKey, item.Interface())
-			}
-		}
-	}
-	return
-
-}
-*/
-
 //commonBuild
 func (s *Collection) buildSlice() (ret []interface{}) {
 	v := reflect.ValueOf(s.data)
@@ -317,4 +289,37 @@ func getValueByKey(item reflect.Value, key string) interface{} {
 // 支持检测 []string, []int , []int64 , []in32 , []interface{} , []float64 , []uint32 , []uint64 , ...
 func IsSlice(v interface{}) bool {
 	return reflect.ValueOf(v).Type().Kind().String() == "slice"
+}
+
+func SliceIntUnique(slice []int) []int {
+	sort.Ints(slice)
+	i := 0
+	var j int
+	for {
+		if i >= len(slice)-1 {
+			break
+		}
+		for j = i + 1; j < len(slice) && slice[i] == slice[j]; j++ {
+		}
+		slice = append(slice[:i+1], slice[j:]...)
+		i++
+	}
+	return slice
+}
+
+func SliceStringUnique(slice []string) []string {
+	sort.Strings(slice)
+	i := 0
+	var j int
+	for {
+		if i >= len(slice)-1 {
+			break
+		}
+		for j = i + 1; j < len(slice) && slice[i] == slice[j]; j++ {
+		}
+		slice = append(slice[:i+1], slice[j:]...)
+		i++
+	}
+	return slice
+
 }
